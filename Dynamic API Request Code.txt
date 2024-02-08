@@ -1,0 +1,70 @@
+public class ApiRequestModel
+{
+    public required string Url { get; set; }
+    public required string TypeRequest { get; set; }
+    public string? Body { get; set; }
+    public List<CustomHeaderModel>? Headers { get; set; }
+    public AuthApiModel? Auth { get; set; }
+}
+
+public class AuthApiModel
+{
+    public required string Type { get; set; }
+    public required string Authorization { get; set; }
+}
+public class CustomHeaderModel
+{
+    public required string Header { get; set; }
+    public string? Value { get; set; }
+}
+    
+public HttpResponseMessage ApiRequest(ApiRequestModel ApiRequest)
+{
+    using (HttpClient httpClient = new HttpClient())
+    {
+        HttpMethod Method = HttpMethod.Get;
+        switch (ApiRequest.TypeRequest)
+        {
+            case "GET":
+                Method = HttpMethod.Get;
+                break;
+            case "POST":
+                Method = HttpMethod.Post;
+                break;
+            case "PUT":
+                Method = HttpMethod.Put;
+                break;
+            case "DELETE":
+                Method = HttpMethod.Delete;
+                break;
+            case "HEAD":
+                Method = HttpMethod.Head;
+                break;
+            default:
+                new Exception("Nenhum Método Aceito");
+                break;
+        }
+        var request = new HttpRequestMessage(Method, ApiRequest.Url);
+
+
+        if (ApiRequest.Auth != null)
+        {
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(ApiRequest.Auth.Type, ApiRequest.Auth.Authorization);
+        }
+        foreach (var header in ApiRequest.Headers!)
+        {
+            request.Headers.Add(header.Header, header.Value);
+        }
+        request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+        if (!String.IsNullOrEmpty(ApiRequest.Body))
+        {
+            request.Content = new StringContent(ApiRequest.Body, Encoding.UTF8, "application/json");
+        }
+
+        HttpResponseMessage? response = httpClient.SendAsync(request).Result;
+
+
+        return response;
+    }
+
+}
